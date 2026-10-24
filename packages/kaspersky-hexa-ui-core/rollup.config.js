@@ -39,6 +39,7 @@ export default {
     copy({
       targets: [
         { src: './src/colors/tokens/tokens.css', dest: [`${OUTPUT_DIR}/colors`, `${OUTPUT_DIR}/esm/colors`] },
+        { src: './src/colors/oklch/tokens.css', dest: [`${OUTPUT_DIR}/colors/oklch`, `${OUTPUT_DIR}/esm/colors/oklch`] },
         { src: './src/typography/tokens/tokens.css', dest: [`${OUTPUT_DIR}/typography`, `${OUTPUT_DIR}/esm/typography`] },
         { src: './src/fonts/tokens/tokens.css', dest: [`${OUTPUT_DIR}/fonts`, `${OUTPUT_DIR}/esm/fonts`] }
       ]

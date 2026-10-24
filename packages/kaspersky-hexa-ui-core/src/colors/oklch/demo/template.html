@@ -1,0 +1,686 @@
+<title>Hexa из одного цвета</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Лабораторный стенд: узкая колонка пояснений + широкие панели сравнения «было | стало».
+   Хром страницы — графит с лёгким синим уклоном; весь цвет живёт в панелях. */
+:root {
+  --page: #f4f5f7; --surface: #ffffff; --ink: #17181b; --ink-2: #5b606a; --ink-3: #8a8f99;
+  --line: #e2e4e9; --line-2: #cfd2d9; --mark: #3b5bd9; --mark-ink: #ffffff;
+  --ok: #157a52; --bad: #b4232f; --warn: #946200;
+  --f-ui: "Onest", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #141518; --surface: #1c1d21; --ink: #e9eaee; --ink-2: #a3a7b0; --ink-3: #737882;
+  --line: #2c2e34; --line-2: #3b3e45; --mark: #7f9cff; --mark-ink: #0f1220;
+  --ok: #52c493; --bad: #ff7a83; --warn: #e9b14a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #141518; --surface: #1c1d21; --ink: #e9eaee; --ink-2: #a3a7b0; --ink-3: #737882;
+  --line: #2c2e34; --line-2: #3b3e45; --mark: #7f9cff; --mark-ink: #0f1220;
+  --ok: #52c493; --bad: #ff7a83; --warn: #e9b14a; color-scheme: dark }
+
+*, *::before, *::after { box-sizing: border-box }
+body { background: var(--page); color: var(--ink); font: 15px/1.55 var(--f-ui); }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 600; letter-spacing: -0.01em }
+h1 { font-size: clamp(28px, 4.2vw, 44px); line-height: 1.08; letter-spacing: -0.025em }
+h2 { font-size: 22px; line-height: 1.2 }
+p { margin: 0; max-width: 68ch }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600 }
+
+header.top { padding-block: 36px 24px; display: grid; gap: 14px }
+header.top .lede { color: var(--ink-2); font-size: 17px }
+.formula { font-family: var(--f-mono); font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; display: inline-block; max-width: 100%; overflow-x: auto; white-space: nowrap }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--ink-2); font-size: 14px }
+.facts b { color: var(--ink); font-variant-numeric: tabular-nums }
+
+/* панель управления */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--page) }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in oklab, var(--page) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line) }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 10px }
+.ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2) }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--surface) }
+.seg button { font: 500 13px var(--f-ui); border: 0; background: none; color: var(--ink-2); padding: 6px 11px; cursor: pointer }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--page) }
+.seg button:focus-visible, .btn-plain:focus-visible, input:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px }
+.swatches { display: flex; gap: 6px }
+.swatches button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line-2); cursor: pointer; padding: 0 }
+.swatches button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink) }
+input[type=color] { width: 32px; height: 28px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--surface); padding: 2px; cursor: pointer }
+.btn-plain { font: 500 13px var(--f-ui); border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 11px; cursor: pointer }
+.knobs { display: none; flex-wrap: wrap; gap: 10px 24px; width: 100% }
+.knobs.open { display: flex }
+.knob { display: grid; grid-template-columns: auto 120px 48px; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2) }
+.knob output { font-family: var(--f-mono); font-size: 12px; color: var(--ink); text-align: right }
+.knob input { width: 100%; accent-color: var(--mark) }
+
+section.blk { padding-block: 34px; display: grid; gap: 16px; border-bottom: 1px solid var(--line) }
+.blk-head { display: grid; gap: 6px }
+.blk-head p { color: var(--ink-2) }
+
+/* сравнение */
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px }
+.panes.single { grid-template-columns: 1fr }
+@media (max-width: 1000px) { .panes { grid-template-columns: 1fr } }
+.pane-wrap { display: grid; gap: 8px; min-width: 0 }
+.pane-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap }
+.pane-label b { font-size: 15px }
+.pane-label span { font-size: 13px; color: var(--ink-3) }
+.pane { border-radius: 10px; overflow: hidden; border: 1px solid var(--line-2); container-type: inline-size; min-width: 0 }
+
+/* ===== мок консоли — только токены Hexa ===== */
+.was { --m-on-accent: var(--fg--neutral_inverted--primary_static); --m-on-danger: var(--fg--neutral_inverted--primary_static) }
+.now { --m-on-accent: var(--fg--on_accent); --m-on-danger: var(--fg--on_danger) }
+.mock { display: grid; grid-template-columns: 172px minmax(0, 1fr); background: var(--bg--neutral--level_0); color: var(--fg--neutral--primary); font: 13px/1.45 var(--f-ui); min-height: 100% }
+.m-side { background: var(--bg--neutral--level_1); border-right: 1px solid var(--border--neutral--medium); padding: 14px 10px; display: grid; gap: 2px; align-content: start }
+.m-logo { display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 2px 8px 12px; font-size: 13px }
+.m-logo i { width: 18px; height: 18px; border-radius: 5px; background: var(--common--accent--enabled); display: block }
+.m-nav { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: 6px; color: var(--fg--neutral--muted) }
+.m-nav.on { background: var(--bg--accent_subtle--enabled); color: var(--fg--accent--bold); font-weight: 500 }
+.m-badge { background: var(--common--danger--enabled); color: var(--m-on-danger); font-size: 11px; font-weight: 600; border-radius: 9px; padding: 0 6px; line-height: 17px; font-variant-numeric: tabular-nums }
+.m-main { padding: 16px; display: grid; gap: 14px; min-width: 0 }
+.m-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap }
+.m-head h3 { font-size: 17px }
+.m-head small { color: var(--fg--neutral--secondary); display: block; font-size: 12px }
+.m-actions { display: flex; gap: 6px; flex-wrap: wrap }
+.m-btn { font: 500 13px var(--f-ui); border-radius: 6px; padding: 6px 12px; border: 1px solid transparent; cursor: pointer }
+.m-btn.p { background: var(--common--accent--enabled); color: var(--m-on-accent) }
+.m-btn.p:hover { background: var(--common--accent--hover) } .m-btn.p:active { background: var(--common--accent--active) }
+.m-btn.s { background: var(--bg--neutral_transparent--level_2); color: var(--fg--neutral--primary) }
+.m-btn.s:hover { background: var(--bg--neutral_transparent--level_3) }
+.m-btn.d { background: var(--common--danger--enabled); color: var(--m-on-danger) }
+.m-btn.d:hover { background: var(--common--danger--hover) }
+.m-btn.dis { background: var(--bg--neutral--disabled); color: var(--fg--neutral--tertiary); cursor: default }
+.m-alerts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+@container (max-width: 520px) { .m-alerts { grid-template-columns: 1fr } .mock { grid-template-columns: 1fr } .m-side { display: none } }
+.m-alert { border-radius: 8px; padding: 9px 11px; display: grid; grid-template-columns: 16px 1fr; gap: 8px; border: 1px solid; font-size: 12.5px }
+.m-alert b { display: block; font-weight: 600; font-size: 13px }
+.m-alert i { width: 16px; height: 16px; border-radius: 50%; display: block; margin-top: 2px }
+.m-alert.info { background: var(--bg--info_subtle--enabled); border-color: var(--border--color--info) } .m-alert.info i { background: var(--fg--info--bold) }
+.m-alert.ok { background: var(--bg--success_subtle--enabled); border-color: var(--border--color--success) } .m-alert.ok i { background: var(--fg--success--bold) }
+.m-alert.warn { background: var(--bg--warning_subtle--enabled); border-color: var(--border--color--warning) } .m-alert.warn i { background: var(--common--warning--enabled) }
+.m-alert.err { background: var(--bg--danger_subtle--enabled); border-color: var(--border--color--danger) } .m-alert.err i { background: var(--fg--danger--bold) }
+.m-alert span { color: var(--fg--neutral--muted) }
+.m-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.m-input { flex: 1 1 160px; border: 1px solid var(--border--neutral--bold); border-radius: 6px; padding: 6px 10px; color: var(--fg--neutral--tertiary); background: var(--bg--neutral--level_0) }
+.m-input.focus { border-color: var(--border--color--focus); box-shadow: 0 0 0 2px var(--bg--accent_subtle_level_1--enabled); color: var(--fg--neutral--primary) }
+.m-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--fg--neutral--secondary) }
+.m-toggle i { width: 28px; height: 16px; border-radius: 8px; background: var(--common--accent--enabled); position: relative; display: block }
+.m-toggle i::after { content: ""; position: absolute; right: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--fg--neutral_inverted--primary_static) }
+.m-table-box { overflow-x: auto; border: 1px solid var(--border--neutral--medium); border-radius: 8px }
+.m-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 460px }
+.m-table th { text-align: left; font-weight: 500; color: var(--fg--neutral--secondary); background: var(--bg--neutral--level_1); padding: 7px 10px; border-bottom: 1px solid var(--border--neutral--medium) }
+.m-table td { padding: 7px 10px; border-bottom: 1px solid var(--border--neutral--medium_overlay); white-space: nowrap }
+.m-table tr:last-child td { border-bottom: 0 }
+.m-table tr.sel td { background: var(--background--selected) }
+.m-table .id { font-family: var(--f-mono); color: var(--fg--neutral--secondary); font-size: 11.5px }
+.m-table a { color: var(--foreground--link); text-decoration: none }
+.sev { display: inline-flex; align-items: center; gap: 6px }
+.sev i { width: 8px; height: 8px; border-radius: 2px; display: block }
+.m-tag { display: inline-block; border-radius: 4px; padding: 1px 7px; font-size: 11.5px; font-weight: 500 }
+.t-new { background: var(--bg--marengo_subtle--enabled); color: var(--fg--marengo--bold) }
+.t-work { background: var(--bg--purple_subtle--enabled); color: var(--fg--purple--bold) }
+.t-done { background: var(--bg--grass_subtle--enabled); color: var(--fg--grass--bold) }
+.t-esc { background: var(--bg--orange_subtle--enabled); color: var(--fg--orange--bold) }
+.t-rule { background: var(--bg--violet_subtle--enabled); color: var(--fg--violet--bold) }
+.m-foot { display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px }
+@container (max-width: 520px) { .m-foot { grid-template-columns: 1fr } }
+.m-card { background: var(--bg--neutral--level_1); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px }
+.m-card h4 { margin: 0; font-size: 12px; font-weight: 500; color: var(--fg--neutral--secondary) }
+.m-bars { display: flex; align-items: flex-end; gap: 5px; height: 64px }
+.m-bars i { flex: 1; border-radius: 3px 3px 0 0; display: block }
+.m-legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--fg--neutral--secondary) }
+.m-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px }
+.m-prog { height: 6px; border-radius: 3px; background: var(--bg--neutral--level_3); overflow: hidden }
+.m-prog i { display: block; height: 100%; width: 68%; background: var(--common--success--enabled) }
+.m-kv { display: flex; justify-content: space-between; font-size: 12px; color: var(--fg--neutral--secondary) }
+.m-kv b { color: var(--fg--neutral--primary); font-weight: 500; font-variant-numeric: tabular-nums }
+.m-term { background: var(--bg--neutral--level_2); border-radius: 6px; padding: 7px 9px; font: 11.5px/1.5 var(--f-mono); white-space: pre; overflow-x: auto }
+.m-term .r { color: var(--terminal--red) } .m-term .g { color: var(--terminal--green) } .m-term .y { color: var(--terminal--yellow) } .m-term .b { color: var(--terminal--blue) } .m-term .m { color: var(--terminal--magenta) }
+
+/* палитры */
+.ramps { display: grid; gap: 4px; overflow-x: auto; padding-bottom: 4px }
+.ramp { display: grid; grid-template-columns: 92px repeat(10, minmax(34px, 1fr)) 64px; gap: 3px; align-items: stretch; min-width: 560px }
+.ramp .nm { font-size: 12.5px; font-weight: 500; display: flex; flex-direction: column; justify-content: center; line-height: 1.2 }
+.ramp .nm small { color: var(--ink-3); font-weight: 400; font-size: 11px }
+.ramp .cell { height: 26px; border-radius: 4px; position: relative }
+.ramp .cell.half { height: 14px }
+.ramp .de { font: 11px var(--f-mono); color: var(--ink-3); display: flex; align-items: center; justify-content: flex-end; font-variant-numeric: tabular-nums }
+.ramp.hdr .cell { height: auto; font: 11px var(--f-mono); color: var(--ink-3); text-align: center }
+.ramp-group { display: grid; gap: 2px; padding-block: 4px; border-top: 1px solid var(--line) }
+.legend-row { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2) }
+.legend-row i { display: inline-block; width: 22px; vertical-align: middle; margin-right: 6px; border-radius: 3px; background: var(--line-2) }
+
+/* график транспонирования */
+.curve-grid { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 24px; align-items: start }
+@media (max-width: 860px) { .curve-grid { grid-template-columns: 1fr } }
+.chart-box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto }
+.chart-box svg { display: block; width: 100%; height: auto; min-width: 320px }
+.notes { display: grid; gap: 12px; color: var(--ink-2); font-size: 14.5px }
+.notes b { color: var(--ink) }
+.rule { display: grid; grid-template-columns: 34px 1fr; gap: 10px }
+.rule .k { font: 600 12px var(--f-mono); color: var(--mark); padding-top: 2px }
+
+/* таблицы */
+.tbl-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px }
+table.data { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px }
+table.data th, table.data td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle }
+table.data th { font-weight: 500; color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em }
+table.data tr:last-child td { border-bottom: 0 }
+table.data td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap }
+.pill { display: inline-block; font: 600 10.5px var(--f-ui); letter-spacing: 0.04em; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px }
+.pill.aa { color: var(--ok); background: color-mix(in oklab, var(--ok) 14%, transparent) }
+.pill.no { color: var(--bad); background: color-mix(in oklab, var(--bad) 14%, transparent) }
+.pill.big { color: var(--warn); background: color-mix(in oklab, var(--warn) 14%, transparent) }
+.chip { display: inline-flex; align-items: center; gap: 4px }
+.chip i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; box-shadow: inset 0 0 0 1px rgb(127 127 127 / 0.25) }
+.tok { font-family: var(--f-mono); font-size: 12px; word-break: break-all }
+
+.stats { display: flex; flex-wrap: wrap; gap: 12px }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; min-width: 150px; display: grid; gap: 2px }
+.stat b { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em }
+.stat span { font-size: 12.5px; color: var(--ink-2) }
+
+pre.code { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; font: 12.5px/1.6 var(--f-mono); overflow-x: auto; color: var(--ink) }
+pre.code .c { color: var(--ink-3) } pre.code .k { color: var(--mark) }
+.code-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap }
+footer { padding-block: 28px 48px; color: var(--ink-3); font-size: 13px }
+footer a { color: var(--ink-2) }
+@media (prefers-reduced-motion: no-preference) { .mock, .ramp .cell { transition: background-color .25s } }
+</style>
+<style id="tokens-was">/*WAS*/</style>
+<style id="tokens-now">/*NOW*/</style>
+
+<header class="top wrap">
+  <span class="eyebrow">Kaspersky Hexa UI · цветовые токены</span>
+  <h1>Hexa из одного цвета</h1>
+  <p class="lede">Все {{TOKENS_COUNT}} цветовых токенов Hexa пересобраны от одного <code>--hx-base</code> через <code>oklch(from …)</code>. Тёмная тема больше не отдельная таблица соответствий: это та же таблица, где светлота каждого шага пропущена через одну кривую.</p>
+  <div class="formula">L<sub>dark</sub> = floor + gain · (1 − L)<sup>γ</sup> &nbsp;·&nbsp; C = c<sub>base</sub> · k · e<sup>−((L − peak)/w)²</sup> &nbsp;·&nbsp; h = h<sub>base</sub> + Δh</div>
+  <div class="facts" id="facts">
+    <span>Исходных цветов: <b>1</b></span>
+    <span>Параметров-чисел: <b>{{PARAMS}}</b></span>
+    <span>Ручных пар для тёмной темы: <b>{{DARK_PAIRS}} → {{BRAND_PAIRS}}</b></span>
+    <span>Отклонение от Hexa, светлая: <b id="f-dl">…</b></span>
+    <span>тёмная: <b id="f-dd">…</b></span>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="ctl"><span>Тема панелей</span>
+      <div class="seg" role="group" aria-label="Тема панелей"><button id="th-l" aria-pressed="false">Светлая</button><button id="th-d" aria-pressed="false">Тёмная</button></div>
+    </div>
+    <div class="ctl"><span>Показать</span>
+      <div class="seg" role="group" aria-label="Что показать"><button data-view="both" aria-pressed="true">Рядом</button><button data-view="was" aria-pressed="false">Было</button><button data-view="now" aria-pressed="false">Стало</button></div>
+    </div>
+    <div class="ctl"><span>База</span>
+      <div class="swatches" id="presets"></div>
+      <input type="color" id="base" value="#4269e7" aria-label="Базовый цвет">
+      <span class="mono" id="base-oklch"></span>
+    </div>
+    <button class="btn-plain" id="knobs-btn" aria-expanded="false">Параметры</button>
+    <div class="knobs" id="knobs">
+      <label class="knob"><span>γ кривой</span><input type="range" id="k-gamma" min="0.4" max="1.2" step="0.01" value="0.8"><output id="o-gamma">0.80</output></label>
+      <label class="knob"><span>Пол (L фона)</span><input type="range" id="k-floor" min="0.12" max="0.34" step="0.005" value="0.235"><output id="o-floor">0.235</output></label>
+      <label class="knob"><span>Gain</span><input type="range" id="k-gain" min="0.6" max="1" step="0.01" value="0.86"><output id="o-gain">0.86</output></label>
+      <label class="knob"><span>Хрома в тёмной</span><input type="range" id="k-chroma" min="0.5" max="1.2" step="0.01" value="0.9"><output id="o-chroma">0.90</output></label>
+      <label class="knob"><span>Статусы за базой</span><input type="range" id="k-follow" min="0" max="1" step="1" value="1"><output id="o-follow">да</output></label>
+      <button class="btn-plain" id="reset">Сбросить</button>
+    </div>
+  </div>
+</div>
+
+<main>
+  <section class="blk wrap" id="compare">
+    <div class="blk-head">
+      <h2>Один экран, два набора токенов</h2>
+      <p>Разметка одна и та же, меняется только набор токенов. Слева оригинальный Hexa (hex-примитивы и вторая, ручная таблица для тёмной темы), справа генерация из базы. Переключите тему: справа она получается без ручных пар (кроме {{BRAND_PAIRS}} фиксированных цветов бренда).</p>
+    </div>
+    <div class="panes" id="panes">
+      <div class="pane-wrap" id="pw-was">
+        <div class="pane-label"><b>Было</b><span>Hexa: {{HEX}} hex + 2 таблицы соответствий</span></div>
+        <div class="pane was" id="pane-was"></div>
+      </div>
+      <div class="pane-wrap" id="pw-now">
+        <div class="pane-label"><b>Стало</b><span>1 цвет + параметры OKLCH</span></div>
+        <div class="pane now" id="pane-now"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="blk wrap" id="ramps-sec">
+    <div class="blk-head">
+      <h2>Палитра: шкалы семейств</h2>
+      <p>Для каждого семейства: оригинальная шкала Hexa, сгенерированная светлая и сгенерированная тёмная (те же шаги, транспонированные). Справа ΔE<sub>OK</sub> в среднем по шкале: всё ниже 2 глаз почти не различает, 2–5 видно рядом, но не по отдельности.</p>
+    </div>
+    <div class="legend-row"><span><i style="height:14px"></i>Hexa</span><span><i style="height:14px"></i>Стало · светлая</span><span><i style="height:8px"></i>Стало · тёмная</span></div>
+    <div class="ramps" id="ramps"></div>
+  </section>
+
+  <section class="blk wrap" id="curve-sec">
+    <div class="blk-head">
+      <h2>Транспонирование светлоты</h2>
+      <p>Каждая точка — семантический токен Hexa: по оси X его L в светлой теме, по Y — L, которую дизайнеры вручную выбрали для тёмной. Линия — одна формула, которая заменяет эту таблицу.</p>
+    </div>
+    <div class="curve-grid">
+      <div class="chart-box"><svg id="curve" viewBox="0 0 520 420" role="img" aria-label="График: светлота в светлой теме против тёмной"></svg></div>
+      <div class="notes">
+        <div class="rule"><span class="k">L↔</span><p><b>Зеркало, а не инверсия.</b> Ручная таблица Hexa почти точно ложится на отражение L относительно ≈0.63. Это не 1 − L: тёмный фон не чёрный (L 0.235), а основной текст не белый (L ≈ 0.93).</p></div>
+        <div class="rule"><span class="k">γ</span><p><b>Кривая растягивает поверхности.</b> У белого края шаги Hexa в тёмной теме примерно вдвое шире, чем в светлой: тёмным уровням подложки нужно больше разницы по L. γ &lt; 1 даёт это растяжение, при γ = 1 получается чистое зеркало.</p></div>
+        <div class="rule"><span class="k">C</span><p><b>Хрома не переносится, а пересчитывается.</b> Она зависит от новой L через «колокол», поэтому тёмная подложка акцента остаётся насыщенной, а не серой.</p></div>
+        <div class="rule"><span class="k">±</span><p><b>Состояния переворачиваются сами.</b> Hover в светлой — это L − 0.04. Знак задаёт тема (<code>--hx-state-dir</code>), поэтому в тёмной hover светлеет без отдельной таблицы.</p></div>
+        <div class="rule"><span class="k">max</span><p><b>Заливка в тёмной не темнеет.</b> Для кнопок и бейджей берётся max(L, T(L)). Иначе жёлтый warning превратился бы в коричневый.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="blk wrap" id="contrast-sec">
+    <div class="blk-head">
+      <h2>Контраст WCAG</h2>
+      <p>Ключевые пары «текст на фоне», считается по фактически отрисованным цветам с учётом прозрачности. AA для обычного текста — 4.5, для границ и крупных элементов — 3.</p>
+    </div>
+    <div class="tbl-box"><table class="data" id="contrast"></table></div>
+  </section>
+
+  <section class="blk wrap" id="delta-sec">
+    <div class="blk-head">
+      <h2>Где генерация расходится с Hexa</h2>
+      <p>Сравнение всех {{TOKENS_COUNT}} токенов в обеих темах. Крупные расхождения почти все там, где сама ручная таблица Hexa нарушает свою же логику переворота: стоит решить, что из этого задумано.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="tbl-box"><table class="data" id="deltas"></table></div>
+  </section>
+
+  <section class="blk wrap" id="code-sec">
+    <div class="code-head">
+      <div class="blk-head"><h2>Как это выглядит в коде</h2><p>Фрагмент сгенерированного файла. Тёмная тема — это три строки.</p></div>
+      <button class="btn-plain" id="copy">Скопировать</button>
+    </div>
+    <pre class="code" id="code"><span class="c">/* единственный цвет */</span>
+:root { <span class="k">--hx-base</span>: #4269E7; }
+
+<span class="c">/* роль = шаг шкалы; L транспонируется темой, C пересчитывается по новой L */</span>
+<span class="k">--_r-red-50</span>: calc((1 - var(--hx-dark)) * var(--hx-l-50)
+       + var(--hx-dark) * clamp(0.18, calc(var(--hx-dk-floor)
+       + var(--hx-dk-gain) * pow(1 - var(--hx-l-50), var(--hx-dk-gamma))), 0.97));
+<span class="k">--role--red_50</span>: oklch(from var(--hx-base)
+       var(--_r-red-50)
+       calc(c * var(--hx-red-k) * exp(-1 * pow((var(--_r-red-50) - var(--hx-red-peak)) / 0.3, 2)))
+       calc(h + var(--hx-red-dh)));
+
+<span class="c">/* семантика Hexa — одна таблица на обе темы */</span>
+<span class="k">--bg--danger_subtle--enabled</span>: var(--role--red_50);
+
+<span class="c">/* текст на заливке выбирается по её L */</span>
+<span class="k">--fg--on_accent</span>: oklch(from var(--fill--accent--enabled)
+       clamp(0.2, calc((l - 0.64) * -100), 1) calc(c * 0.12) h);
+
+<span class="c">/* вся тёмная тема */</span>
+.theme-dark { <span class="k">--hx-dark</span>: 1; <span class="k">--hx-state-dir</span>: 1.3; color-scheme: dark; }</pre>
+  </section>
+</main>
+
+<footer class="wrap">
+  <a href="tokens.css">tokens.css</a> · <a href="https://github.com/KasperskyLab/uif/tree/master/packages/kaspersky-hexa-ui-core/src/colors/oklch">исходники генератора</a>.<br>Основа: доклад Анны Ширяевой «Теория цвета и практики гибкого кода» и токены пакета <span class="mono">@kaspersky/hexa-ui-core</span> (tokens-pixso). Нужен браузер с relative color syntax и <code>pow()</code>/<code>exp()</code>: Chrome 122+, Safari 18+, Firefox 128+.
+</footer>
+
+<template id="mock-tpl">
+  <div class="mock">
+    <aside class="m-side">
+      <div class="m-logo"><i></i>Security Center</div>
+      <div class="m-nav">Мониторинг</div>
+      <div class="m-nav">Устройства</div>
+      <div class="m-nav on">Инциденты <span class="m-badge">12</span></div>
+      <div class="m-nav">Политики</div>
+      <div class="m-nav">Задачи</div>
+      <div class="m-nav">Отчёты</div>
+    </aside>
+    <div class="m-main">
+      <div class="m-head">
+        <div><h3>Инциденты</h3><small>Группа «Бухгалтерия» · 48 устройств</small></div>
+        <div class="m-actions"><button class="m-btn s">Экспорт</button><button class="m-btn d">Изолировать</button><button class="m-btn p">Создать задачу</button></div>
+      </div>
+      <div class="m-alerts">
+        <div class="m-alert err"><i></i><div><b>Активность шифровальщика</b><span>PC-ACC-017 · процесс заблокирован</span></div></div>
+        <div class="m-alert warn"><i></i><div><b>Лицензия истекает</b><span>Осталось 10 дней</span></div></div>
+        <div class="m-alert info"><i></i><div><b>Базы обновлены</b><span>24.10.2026, 13:40</span></div></div>
+        <div class="m-alert ok"><i></i><div><b>Сканирование завершено</b><span>Угроз не найдено на 31 устройстве</span></div></div>
+      </div>
+      <div class="m-tools">
+        <div class="m-input focus">HEUR:Trojan|</div>
+        <div class="m-input">Все устройства</div>
+        <span class="m-toggle"><i></i>Только активные</span>
+        <button class="m-btn dis">Удалить</button>
+      </div>
+      <div class="m-table-box">
+        <table class="m-table">
+          <thead><tr><th>ID</th><th>Устройство</th><th>Обнаружено</th><th>Критичность</th><th>Статус</th></tr></thead>
+          <tbody>
+            <tr><td class="id">INC-2291</td><td><a href="#compare">PC-ACC-017</a></td><td>Trojan-Ransom.Win32.Gen</td><td><span class="sev"><i style="background:var(--foreground--severity--severitylevel6)"></i>Критическая</span></td><td><span class="m-tag t-esc">Эскалация</span></td></tr>
+            <tr class="sel"><td class="id">INC-2290</td><td><a href="#compare">SRV-FS-02</a></td><td>PDM:Exploit.Win32.Generic</td><td><span class="sev"><i style="background:var(--foreground--severity--severitylevel5)"></i>Высокая</span></td><td><span class="m-tag t-work">В работе</span></td></tr>
+            <tr><td class="id">INC-2288</td><td><a href="#compare">NB-HR-044</a></td><td>HEUR:Trojan.Script.Agent</td><td><span class="sev"><i style="background:var(--foreground--severity--severitylevel3)"></i>Средняя</span></td><td><span class="m-tag t-new">Новый</span></td></tr>
+            <tr><td class="id">INC-2285</td><td><a href="#compare">PC-ACC-009</a></td><td>not-a-virus:RiskTool.Miner</td><td><span class="sev"><i style="background:var(--foreground--severity--severitylevel2)"></i>Низкая</span></td><td><span class="m-tag t-rule">Правило</span></td></tr>
+            <tr><td class="id">INC-2281</td><td><a href="#compare">NB-SALES-12</a></td><td>UDS:DangerousObject.Multi</td><td><span class="sev"><i style="background:var(--foreground--severity--severitylevel1)"></i>Инфо</span></td><td><span class="m-tag t-done">Закрыт</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="m-foot">
+        <div class="m-card"><h4>Инциденты за неделю</h4>
+          <div class="m-bars">
+            <i style="height:40%;background:var(--chart--base--status--primary--critical)"></i><i style="height:62%;background:var(--chart--base--status--primary--high)"></i><i style="height:85%;background:var(--chart--base--status--primary--medium)"></i><i style="height:55%;background:var(--chart--base--status--primary--low)"></i><i style="height:30%;background:var(--chart--base--status--primary--positive)"></i><i style="height:70%;background:var(--chart--base--status--primary--in_progress)"></i><i style="height:48%;background:var(--chart--base--status--primary--update)"></i>
+          </div>
+          <div class="m-legend"><span><i style="background:var(--chart--base--status--primary--critical)"></i>Критич.</span><span><i style="background:var(--chart--base--status--primary--high)"></i>Высок.</span><span><i style="background:var(--chart--base--status--primary--medium)"></i>Сред.</span><span><i style="background:var(--chart--base--status--primary--in_progress)"></i>В работе</span></div>
+        </div>
+        <div class="m-card"><h4>Защита</h4>
+          <div class="m-kv"><span>Покрытие агентом</span><b>68%</b></div>
+          <div class="m-prog"><i></i></div>
+          <div class="m-term"><span class="b">$</span> klnagchk <span class="m">-sv</span>
+<span class="g">✓</span> agent 15.1.0  <span class="y">!</span> db 3h  <span class="r">✗</span> fw off</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>// Разбор вычисленного цвета → OKLab / sRGB, ΔE и контраст WCAG
+const CL = (() => {
+  const lin = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const gam = c => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+  function rgbLinToOklab([r, g, b]) {
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+      1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+      0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s];
+  }
+  function oklabToRgbLin([L, a, b]) {
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+    return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s];
+  }
+  // → {lab:[L,a,b], alpha}
+  function parse(str) {
+    str = str.trim();
+    let m = str.match(/^oklch\(([^)]+)\)$/);
+    if (m) {
+      const [main, al] = m[1].split('/');
+      let [L, C, H] = main.trim().split(/\s+/).map(v => (v === 'none' ? 0 : parseFloat(v)));
+      if (/%/.test(main.trim().split(/\s+/)[0])) L /= 100;
+      const h = (H * Math.PI) / 180;
+      return { lab: [L, C * Math.cos(h), C * Math.sin(h)], alpha: al ? parseFloat(al) : 1 };
+    }
+    m = str.match(/^rgba?\(([^)]+)\)$/);
+    if (m) {
+      const p = m[1].split(/[\s,\/]+/).filter(Boolean).map(parseFloat);
+      return { lab: rgbLinToOklab(p.slice(0, 3).map(v => lin(v / 255))), alpha: p[3] ?? 1 };
+    }
+    m = str.match(/^color\(srgb ([^)]+)\)$/);
+    if (m) {
+      const [main, al] = m[1].split('/');
+      const p = main.trim().split(/\s+/).map(parseFloat);
+      return { lab: rgbLinToOklab(p.map(lin)), alpha: al ? parseFloat(al) : 1 };
+    }
+    return null;
+  }
+  const clip = v => Math.min(1, Math.max(0, v));
+  function toLinRgb(c, over) {
+    // композит поверх фона (для полупрозрачных)
+    let rgb = oklabToRgbLin(c.lab).map(v => clip(gam(clip(v))));
+    if (c.alpha < 1 && over) {
+      const o = oklabToRgbLin(over.lab).map(v => clip(gam(clip(v))));
+      rgb = rgb.map((v, i) => v * c.alpha + o[i] * (1 - c.alpha));
+    }
+    return rgb.map(lin);
+  }
+  const lum = rgb => 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  function contrast(fg, bg) {
+    const a = lum(toLinRgb(fg, bg)), b = lum(toLinRgb(bg));
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }
+  function composite(c, over) {
+    return { lab: rgbLinToOklab(toLinRgb(c, over)), alpha: 1 };
+  }
+  const dE = (p, q) => Math.hypot(p.lab[0] - q.lab[0], p.lab[1] - q.lab[1], p.lab[2] - q.lab[2]) * 100;
+  const lch = c => [c.lab[0], Math.hypot(c.lab[1], c.lab[2]), ((Math.atan2(c.lab[2], c.lab[1]) * 180) / Math.PI + 360) % 360];
+  function hex(c) {
+    return '#' + oklabToRgbLin(c.lab).map(v => Math.round(clip(gam(clip(v))) * 255).toString(16).padStart(2, '0')).join('');
+  }
+  return { parse, contrast, composite, dE, lch, hex };
+})();
+</script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const TOKENS = /*TOKENS*/;
+  const FAMS = ['marina','red','orange','yellow','grass','emerald','marengo','coldgrey','purple','violet'];
+  const FAMNAME = {marina:'акцент',red:'danger',orange:'',yellow:'warning',grass:'',emerald:'success',marengo:'',coldgrey:'info',purple:'',violet:''};
+  const STEPS = [50,100,200,300,400,500,600,700,800,900];
+  const PRESETS = [['#4269E7','Hexa marina'],['#00A88E','Kaspersky green'],['#7642E1','Фиолетовый'],['#D24704','Оранжевый'],['#4879AF','Сталь']];
+  const DEF = {gamma:0.8, floor:0.235, gain:0.86, chroma:0.9, follow:1};
+  const paneWas = $('#pane-was'), paneNow = $('#pane-now');
+  const tpl = $('#mock-tpl');
+  paneWas.append(tpl.content.cloneNode(true));
+  paneNow.append(tpl.content.cloneNode(true));
+
+  // зонды для чтения вычисленных цветов
+  function probe(host) { const i = document.createElement('i'); i.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden'; host.append(i); return i; }
+  const prW = probe(paneWas), prN = probe(paneNow);
+  const read = (pr, expr) => { pr.style.color = ''; pr.style.color = expr; return CL.parse(getComputedStyle(pr).color); };
+  const tok = (pr, t) => read(pr, `var(--${t})`);
+
+  // тема панелей
+  const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  let theme = (() => { try { return localStorage.getItem('hx-theme'); } catch (e) { return null; } })() || (document.documentElement.dataset.theme || (sysDark ? 'dark' : 'light'));
+  function setTheme(t) {
+    theme = t;
+    for (const p of [paneWas, paneNow]) { if (t === 'dark') p.dataset.t = 'dark'; else delete p.dataset.t; }
+    $('#th-l').setAttribute('aria-pressed', t === 'light'); $('#th-d').setAttribute('aria-pressed', t === 'dark');
+    try { localStorage.setItem('hx-theme', t); } catch (e) {}
+    schedule();
+  }
+  $('#th-l').onclick = () => setTheme('light'); $('#th-d').onclick = () => setTheme('dark');
+
+  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-view]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    const v = b.dataset.view;
+    $('#pw-was').hidden = v === 'now'; $('#pw-now').hidden = v === 'was';
+    $('#panes').classList.toggle('single', v !== 'both');
+  });
+
+  // база и параметры
+  const presets = $('#presets');
+  PRESETS.forEach(([hex, name]) => { const b = document.createElement('button'); b.style.background = hex; b.title = name; b.setAttribute('aria-label', name); b.dataset.hex = hex; b.onclick = () => setBase(hex); presets.append(b); });
+  function setBase(hex) {
+    paneNow.style.setProperty('--hx-base', hex);
+    $('#base').value = hex.toLowerCase();
+    presets.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.hex.toLowerCase() === hex.toLowerCase()));
+    schedule();
+  }
+  $('#base').oninput = e => setBase(e.target.value);
+  $('#knobs-btn').onclick = () => { const k = $('#knobs'); k.classList.toggle('open'); $('#knobs-btn').setAttribute('aria-expanded', k.classList.contains('open')); };
+  const KN = {gamma:['--hx-dk-gamma',2], floor:['--hx-dk-floor',3], gain:['--hx-dk-gain',2], chroma:['--hx-dk-chroma',2], follow:['--hx-follow',0]};
+  function setKnob(k, v) {
+    paneNow.style.setProperty(KN[k][0], v);
+    $('#k-' + k).value = v;
+    $('#o-' + k).textContent = k === 'follow' ? (+v ? 'да' : 'нет') : (+v).toFixed(KN[k][1]);
+    schedule();
+  }
+  Object.keys(KN).forEach(k => $('#k-' + k).oninput = e => setKnob(k, e.target.value));
+  $('#reset').onclick = () => { Object.entries(DEF).forEach(([k, v]) => setKnob(k, v)); setBase('#4269E7'); };
+
+  // ===== рендер аналитики =====
+  let raf = 0;
+  function schedule() { clearTimeout(raf); raf = setTimeout(render, 120); }
+  const fmt = (x, d = 2) => x.toFixed(d);
+  const css = c => `oklch(${fmt(c.lab[0],3)} ${fmt(Math.hypot(c.lab[1],c.lab[2]),3)} ${fmt(CL.lch(c)[2],1)}${c.alpha < 1 ? ' / ' + fmt(c.alpha, 2) : ''})`;
+
+  // одна тема для пары панелей: временно ставим тему, читаем, возвращаем
+  function withTheme(t, fn) {
+    const saved = [paneWas.dataset.t, paneNow.dataset.t];
+    for (const p of [paneWas, paneNow]) { if (t === 'dark') p.dataset.t = 'dark'; else delete p.dataset.t; }
+    try { return fn(); } finally { [paneWas, paneNow].forEach((p, i) => { if (saved[i]) p.dataset.t = saved[i]; else delete p.dataset.t; }); }
+  }
+
+  function measureAll() {
+    const out = {};
+    for (const t of ['light', 'dark']) out[t] = withTheme(t, () => {
+      const bgW = tok(prW, 'bg--neutral--level_0'), bgN = tok(prN, 'bg--neutral--level_0');
+      return TOKENS.map(name => {
+        const a = tok(prW, name), b = tok(prN, name);
+        if (!a || !b) return null;
+        const ac = CL.composite(a, bgW), bc = CL.composite(b, bgN);
+        return { name, a, b, ac, bc, d: CL.dE(ac, bc) };
+      }).filter(Boolean);
+    });
+    return out;
+  }
+
+  function render() {
+    const base = read(prN, 'var(--hx-base)');
+    if (base) { const [L, C, H] = CL.lch(base); $('#base-oklch').textContent = `oklch(${fmt(L,3)} ${fmt(C,3)} ${fmt(H,0)})`; }
+    const M = measureAll();
+    const mean = arr => arr.reduce((s, r) => s + r.d, 0) / arr.length;
+    $('#f-dl').textContent = 'ΔE ' + fmt(mean(M.light), 1);
+    $('#f-dd').textContent = 'ΔE ' + fmt(mean(M.dark), 1);
+    renderRamps(); renderCurve(M); renderContrast(); renderDeltas(M);
+  }
+
+  function renderRamps() {
+    const box = $('#ramps'); box.textContent = '';
+    const hdr = document.createElement('div'); hdr.className = 'ramp hdr';
+    hdr.innerHTML = '<span></span>' + STEPS.map(s => `<span class="cell">${s}</span>`).join('') + '<span class="de">ΔE</span>';
+    box.append(hdr);
+    const rows = [...FAMS.map(f => [f, STEPS]), ['neutral', [0,100,200,300,400,500,600,700,800,900]]];
+    for (const [f, steps] of rows) {
+      const g = document.createElement('div'); g.className = 'ramp-group';
+      let sum = 0;
+      const was = steps.map(s => tok(prW, `color--${f}_${s}`));
+      const nowL = withTheme('light', () => steps.map(s => tok(prN, `role--${f}_${s}`)));
+      const nowD = withTheme('dark', () => steps.map(s => tok(prN, `role--${f}_${s}`)));
+      steps.forEach((s, i) => sum += CL.dE(was[i], nowL[i]));
+      const mk = (cells, cls, label, de) => {
+        const r = document.createElement('div'); r.className = 'ramp';
+        r.innerHTML = `<span class="nm">${label}</span>` + cells.map((c, i) => `<span class="cell ${cls}" style="background:${css(c)}" title="${f} ${steps[i]} · ${CL.hex(c)}"></span>`).join('') + `<span class="de">${de}</span>`;
+        g.append(r);
+      };
+      mk(was, '', `${f}<small>${FAMNAME[f] || (f === 'neutral' ? 'нейтральный' : 'тег / график')}</small>`, '');
+      mk(nowL, '', '', fmt(sum / steps.length, 1));
+      mk(nowD, 'half', '', '');
+      box.append(g);
+    }
+  }
+
+  function renderCurve(M) {
+    const svg = $('#curve');
+    const W = 520, H = 420, x0 = 48, y0 = 20, w = 452, h = 360;
+    const X = v => x0 + v * w, Y = v => y0 + (1 - v) * h;
+    const g = getComputedStyle(document.documentElement);
+    const ink2 = 'var(--ink-3)';
+    let s = '';
+    for (let v = 0; v <= 1.0001; v += 0.1) {
+      s += `<line x1="${X(v)}" x2="${X(v)}" y1="${Y(0)}" y2="${Y(1)}" stroke="var(--line)" stroke-width="1"/>`;
+      s += `<line x1="${X(0)}" x2="${X(1)}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/>`;
+      s += `<text x="${X(v)}" y="${Y(0) + 16}" font-size="11" text-anchor="middle" fill="var(--ink-3)" font-family="var(--f-mono)">${v.toFixed(1)}</text>`;
+      s += `<text x="${X(0) - 8}" y="${Y(v) + 4}" font-size="11" text-anchor="end" fill="var(--ink-3)" font-family="var(--f-mono)">${v.toFixed(1)}</text>`;
+    }
+    s += `<text x="${X(0.5)}" y="${H - 2}" font-size="12" text-anchor="middle" fill="var(--ink-2)">L в светлой теме</text>`;
+    s += `<text x="12" y="${Y(0.5)}" font-size="12" text-anchor="middle" fill="var(--ink-2)" transform="rotate(-90 12 ${Y(0.5)})">L в тёмной теме</text>`;
+    // зеркало
+    s += `<line x1="${X(0.26)}" y1="${Y(1)}" x2="${X(1)}" y2="${Y(0.26)}" stroke="var(--ink-3)" stroke-dasharray="4 4" stroke-width="1.2"/>`;
+    s += `<text x="${X(0.3)}" y="${Y(0.985)}" font-size="11" fill="var(--ink-3)">зеркало 1.26 − L</text>`;
+    // точки Hexa
+    const light = new Map(M.light.map(r => [r.name, r])), pts = [];
+    for (const r of M.dark) {
+      const l = light.get(r.name); if (!l || r.name.includes('static') || l.a.alpha < 1 || r.a.alpha < 1 || r.name.startsWith('brand')) continue;
+      const Ll = l.a.lab[0], Ld = r.a.lab[0];
+      if (Math.abs(Ll - Ld) < 1e-3 && !r.name.includes('450')) continue;
+      pts.push([Ll, Ld, CL.hex(r.a), r.name]);
+    }
+    const seen = new Set();
+    for (const [a, b, col, n] of pts) {
+      const key = a.toFixed(3) + b.toFixed(3); if (seen.has(key)) continue; seen.add(key);
+      s += `<circle cx="${X(a)}" cy="${Y(b)}" r="4.2" fill="${col}" stroke="var(--surface)" stroke-width="1.2"><title>${n}: ${a.toFixed(3)} → ${b.toFixed(3)}</title></circle>`;
+    }
+    // кривая из текущих параметров
+    const p = k => +$('#k-' + k).value;
+    const T = L => Math.min(0.97, Math.max(0.18, p('floor') + p('gain') * Math.pow(1 - L, p('gamma'))));
+    let d = '';
+    for (let i = 0; i <= 100; i++) { const L = 0.15 + i * 0.0085; d += (i ? 'L' : 'M') + X(L).toFixed(1) + ' ' + Y(T(L)).toFixed(1); }
+    s += `<path d="${d}" fill="none" stroke="var(--mark)" stroke-width="2.6"/>`;
+    s += `<text x="${X(0.62)}" y="${Y(T(0.62)) - 10}" font-size="12" fill="var(--mark)" font-weight="600">T(L), γ = ${p('gamma').toFixed(2)}</text>`;
+    // фон L 0.235
+    s += `<text x="${X(1) - 4}" y="${Y(T(1)) + 16}" font-size="11" text-anchor="end" fill="var(--ink-2)">фон: белый → ${T(1).toFixed(3)}</text>`;
+    s += `<text x="${X(0.235) + 6}" y="${Y(T(0.235)) + 16}" font-size="11" fill="var(--ink-2)">текст → ${T(0.235).toFixed(3)}</text>`;
+    svg.innerHTML = s;
+  }
+
+  const PAIRS = [
+    ['Основной текст', 'fg--neutral--primary', 'bg--neutral--level_0', 4.5],
+    ['Вторичный текст', 'fg--neutral--secondary', 'bg--neutral--level_0', 4.5],
+    ['Третичный текст', 'fg--neutral--tertiary', 'bg--neutral--level_0', 3],
+    ['Ссылка', 'foreground--link', 'bg--neutral--level_0', 4.5],
+    ['Текст на кнопке акцента', ['fg--neutral_inverted--primary_static', 'fg--on_accent'], 'common--accent--enabled', 4.5],
+    ['Текст на danger-бейдже', ['fg--neutral_inverted--primary_static', 'fg--on_danger'], 'common--danger--enabled', 4.5],
+    ['Danger на своей подложке', 'fg--danger--bold', 'bg--danger_subtle--enabled', 4.5],
+    ['Warning на своей подложке', 'fg--warning--bold', 'bg--warning_subtle--enabled', 4.5],
+    ['Success на своей подложке', 'fg--success--bold', 'bg--success_subtle--enabled', 4.5],
+    ['Тег «Закрыт»', 'fg--grass--bold', 'bg--grass_subtle--enabled', 4.5],
+    ['Граница поля', 'border--neutral--bold', 'bg--neutral--level_0', 3],
+    ['Текст на подложке уровня 2', 'fg--neutral--primary', 'bg--neutral--level_2', 4.5],
+  ];
+  function renderContrast() {
+    const rows = [];
+    const res = { light: [], dark: [] };
+    for (const t of ['light', 'dark']) withTheme(t, () => {
+      for (const [, fg, bg] of PAIRS) {
+        const [fw, fn] = Array.isArray(fg) ? fg : [fg, fg];
+        const bW = tok(prW, bg), bN = tok(prN, bg);
+        res[t].push([CL.contrast(tok(prW, fw), bW), CL.contrast(tok(prN, fn), bN), tok(prN, fn), bN]);
+      }
+    });
+    const cell = (v, min) => `${v.toFixed(2)}<span class="pill ${v >= min ? 'aa' : 'no'}">${v >= min ? (min === 3 ? '3:1' : 'AA') : 'мало'}</span>`;
+    let h = '<thead><tr><th>Пара</th><th>Было · светлая</th><th>Стало · светлая</th><th>Было · тёмная</th><th>Стало · тёмная</th></tr></thead><tbody>';
+    PAIRS.forEach(([label, fg, , min], i) => {
+      const L = res.light[i], D = res.dark[i];
+      const note = Array.isArray(fg) ? '<br><span class="tok" style="color:var(--ink-3)">стало: ' + fg[1] + '</span>' : '';
+      h += `<tr><td>${label}${note}</td><td class="num">${cell(L[0], min)}</td><td class="num">${cell(L[1], min)}</td><td class="num">${cell(D[0], min)}</td><td class="num">${cell(D[1], min)}</td></tr>`;
+    });
+    $('#contrast').innerHTML = h + '</tbody>';
+  }
+
+  function renderDeltas(M) {
+    const all = [...M.light.map(r => ({ ...r, t: 'светлая' })), ...M.dark.map(r => ({ ...r, t: 'тёмная' }))];
+    const st = (arr, lim) => Math.round(100 * arr.filter(r => r.d < lim).length / arr.length);
+    const med = arr => { const v = arr.map(r => r.d).sort((a, b) => a - b); return v[v.length >> 1]; };
+    $('#stats').innerHTML = [
+      [st(M.light, 3) + '%', 'светлая: ΔE < 3'],
+      [fmt(med(M.light), 1), 'светлая: медиана ΔE'],
+      [st(M.dark, 6) + '%', 'тёмная: ΔE < 6'],
+      [fmt(med(M.dark), 1), 'тёмная: медиана ΔE'],
+    ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+    const seen = new Set();
+    const top = all.sort((a, b) => b.d - a.d).filter(r => { const k = r.t + CL.hex(r.ac) + CL.hex(r.bc); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 10);
+    let h = '<thead><tr><th>Токен</th><th>Тема</th><th>Hexa</th><th>Стало</th><th>ΔE</th></tr></thead><tbody>';
+    for (const r of top) h += `<tr><td class="tok">${r.name}</td><td>${r.t}</td><td><span class="chip"><i style="background:${CL.hex(r.ac)}"></i><span class="mono">${CL.hex(r.ac)}</span></span></td><td><span class="chip"><i style="background:${CL.hex(r.bc)}"></i><span class="mono">${CL.hex(r.bc)}</span></span></td><td class="num">${fmt(r.d, 1)}<span class="pill ${r.d > 15 ? 'big' : 'aa'}">${r.d > 15 ? 'решить' : 'норма'}</span></td></tr>`;
+    $('#deltas').innerHTML = h + '</tbody>';
+  }
+
+  $('#copy').onclick = async () => {
+    const txt = $('#code').innerText;
+    try { await navigator.clipboard.writeText(txt); $('#copy').textContent = 'Скопировано'; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents($('#code')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $('#copy').textContent = 'Выделено, нажмите Ctrl+C'; }
+    setTimeout(() => $('#copy').textContent = 'Скопировать', 2000);
+  };
+
+  setBase('#4269E7');
+  setTheme(theme);
+  document.fonts && document.fonts.ready.then(schedule);
+})();
+</script>

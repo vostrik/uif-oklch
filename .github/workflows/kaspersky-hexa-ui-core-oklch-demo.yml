@@ -1,0 +1,43 @@
+name: "[demo] @kaspersky/hexa-ui-core oklch tokens"
+
+# Стенд «было / стало» для OKLCH-токенов → gh-pages/hexa-ui-core-oklch
+# В KasperskyLab/uif деплоится только из master; в форках — из любой ветки,
+# чтобы автор PR мог показать стенд до мержа (https://<owner>.github.io/<repo>/hexa-ui-core-oklch/).
+
+on:
+  push:
+    paths:
+      - 'packages/kaspersky-hexa-ui-core/src/colors/oklch/**'
+      - 'packages/kaspersky-hexa-ui-core/src/colors/tokens-pixso/tokens.css'
+      - '.github/workflows/kaspersky-hexa-ui-core-oklch-demo.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.repository != 'KasperskyLab/uif' || github.ref == 'refs/heads/master'
+    # без environment: github-pages — его правила пускают только default branch,
+    # а peaceiris публикует коммитом в ветку gh-pages, ему хватает contents: write
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: ./packages/kaspersky-hexa-ui-core
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build demo
+        shell: bash
+        run: |
+          node src/colors/oklch/oklch-build.js --demo
+          git diff --exit-code src/colors/oklch/tokens.css || (echo "tokens.css is stale: run npm run build:oklch" && exit 1)
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./packages/kaspersky-hexa-ui-core/oklch-demo
+          destination_dir: hexa-ui-core-oklch

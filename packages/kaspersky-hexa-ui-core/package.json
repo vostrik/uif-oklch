@@ -46,6 +46,8 @@
     "update-colors": "gulp updatePixsoColors && gulp mergePixsoTokens",
     "check-tokens-change": "gulp checkPixsoSwappedTokensChange",
     "check-tokens-change:noswapped": "gulp checkPixsoNotSwappedTokensChange",
+    "build:oklch": "node src/colors/oklch/oklch-build.js",
+    "build:oklch-demo": "node src/colors/oklch/oklch-build.js --demo",
     "update-typography": "npx ts-node ./src/typography/write-tokens-to-json.ts && gulp updateTypography"
   },
   "devDependencies": {

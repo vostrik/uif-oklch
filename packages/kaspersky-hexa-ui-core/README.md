@@ -97,6 +97,14 @@ _Экспортируемые объекты:_
 import '@kaspersky/hexa-ui-core/colors/tokens.css'
 ```
 
+#### Токены цветов на OKLCH (экспериментально)
+
+```tsx
+import '@kaspersky/hexa-ui-core/colors/oklch/tokens.css'
+```
+
+Те же имена переменных, но все цвета выводятся из одного `--hx-base`, а тёмная тема получается транспонированием светлоты, а не второй таблицей. Подробности — в [src/colors/oklch/README.md](src/colors/oklch/README.md), стенд «было / стало» — https://kasperskylab.github.io/uif/hexa-ui-core-oklch/
+
 ### Сборка пакета
 
 ```shell
